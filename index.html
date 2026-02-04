@@ -73,32 +73,28 @@ Browser and APK output will be identical.
       </html>
       `;
 
-      fetch("https://pdf-server-gk8k.onrender.com/pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain"
-        },
-        body: html
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Server error");
-        return res.blob();
-      })
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-
-        // Mobile-safe: show clickable link
-        document.getElementById("result").innerHTML = `
-          <a href="${url}" target="_blank">
-            👉 Tap here to open / download PDF
-          </a>
-        `;
-      })
-      .catch(err => {
-        document.getElementById("result").innerHTML =
-          "❌ PDF generation failed: " + err;
-      });
-    }
+fetch("https://pdf-server-gk8k.onrender.com/pdf", {
+  method: "POST",
+  headers: {
+    "Content-Type": "text/html"
+  },
+  body: html
+})
+.then(res => {
+  if (!res.ok) throw new Error("Server error");
+  return res.blob();
+})
+.then(blob => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "output.pdf";
+  a.textContent = "Tap here to open / download PDF";
+  document.body.appendChild(a);
+})
+.catch(err => {
+  alert("PDF generation failed: " + err.message);
+});
   </script>
 
 </body>
