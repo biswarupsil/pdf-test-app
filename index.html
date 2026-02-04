@@ -2,99 +2,144 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PDF Test App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF Generator Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
+      padding: 15px;
     }
+
     textarea {
       width: 100%;
-      height: 200px;
-      font-size: 16px;
-      box-sizing: border-box;
+      height: 140px;
     }
+
     button {
-      margin-top: 15px;
-      padding: 12px;
+      padding: 10px 20px;
+      margin-top: 10px;
       font-size: 16px;
-      width: 100%;
-      cursor: pointer;
     }
-    #result {
+
+    #status {
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    /* Debug console */
+    #consoleBox {
       margin-top: 20px;
-      font-size: 18px;
+      background: #111;
+      color: #0f0;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      height: 180px;
+      overflow-y: auto;
+      border-radius: 6px;
+    }
+
+    .error {
+      color: #ff4d4d;
+    }
+
+    .info {
+      color: #00d4ff;
     }
   </style>
 </head>
 
 <body>
 
-  <h2>PDF Test Web App</h2>
+  <h2>PDF Generator Test App</h2>
 
-  <p>Type something below and generate a PDF.</p>
-
-  <textarea id="content">
-This PDF is generated using Chrome (Puppeteer).
-Browser and APK output will be identical.
+  <textarea id="textInput">
+Hello!
+This PDF was generated successfully.
   </textarea>
 
-  <button onclick="generatePDF()">Generate PDF</button>
+  <br>
 
-  <div id="result"></div>
+  <button type="button" onclick="generatePDF()">Generate PDF</button>
+
+  <p id="status"></p>
+
+  <!-- Debug console -->
+  <div id="consoleBox"></div>
 
   <script>
-    function generatePDF() {
+    const consoleBox = document.getElementById("consoleBox");
 
-      document.getElementById("result").innerHTML = "Generating PDF… please wait";
+    function log(message, type = "info") {
+      const div = document.createElement("div");
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      div.className = type;
+      consoleBox.appendChild(div);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
 
-      const text = document.getElementById("content").value;
+    async function generatePDF() {
+      const status = document.getElementById("status");
+      status.textContent = "Generating PDF… please wait";
+
+      log("Generate button clicked");
+      log("Preparing HTML for PDF");
+
+      const text = document.getElementById("textInput").value;
 
       const html = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 40px;
-            }
-            h1 {
-              border-bottom: 2px solid #000;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>PDF Output</h1>
-          <p>${text.replace(/\n/g, "<br>")}</p>
-        </body>
-      </html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial; padding: 40px; }
+            </style>
+          </head>
+          <body>
+            <h1>Generated PDF</h1>
+            <p>${text.replace(/\n/g, "<br>")}</p>
+          </body>
+        </html>
       `;
 
-fetch("https://pdf-server-gk8k.onrender.com/pdf", {
-  method: "POST",
-  headers: {
-    "Content-Type": "text/html"
-  },
-  body: html
-})
-.then(res => {
-  if (!res.ok) throw new Error("Server error");
-  return res.blob();
-})
-.then(blob => {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "output.pdf";
-  a.textContent = "Tap here to open / download PDF";
-  document.body.appendChild(a);
-})
-.catch(err => {
-  alert("PDF generation failed: " + err.message);
-});
+      try {
+        log("Sending POST request to PDF server");
+
+        const response = await fetch(
+          "https://pdf-server-gk8k.onrender.com/pdf",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/html"
+            },
+            body: html
+          }
+        );
+
+        log("Response received: HTTP " + response.status);
+
+        if (!response.ok) {
+          throw new Error("Server returned status " + response.status);
+        }
+
+        const blob = await response.blob();
+        log("PDF blob received (" + blob.size + " bytes)");
+
+        const url = URL.createObjectURL(blob);
+
+        status.innerHTML =
+          `<a href="${url}" target="_blank">
+            Tap here to open / download PDF
+          </a>`;
+
+        log("PDF ready. Download link created.");
+      } catch (err) {
+        status.textContent = "PDF generation failed";
+        log("ERROR: " + err.message, "error");
+      }
+    }
+
+    log("App loaded and ready");
   </script>
 
 </body>
