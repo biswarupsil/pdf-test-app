@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF Test App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 15px;
+      padding: 12px;
+      font-size: 16px;
+      width: 100%;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>PDF Test Web App</h2>
+
+  <p>Type something below and generate a PDF.</p>
+
+  <textarea id="content">
+This PDF is generated using Chrome (Puppeteer).
+Browser and APK output will be identical.
+  </textarea>
+
+  <button onclick="generatePDF()">Generate PDF</button>
+
+  <div id="result"></div>
+
+  <script>
+    function generatePDF() {
+
+      document.getElementById("result").innerHTML = "Generating PDF… please wait";
+
+      const text = document.getElementById("content").value;
+
+      const html = `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+            }
+            h1 {
+              border-bottom: 2px solid #000;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>PDF Output</h1>
+          <p>${text.replace(/\n/g, "<br>")}</p>
+        </body>
+      </html>
+      `;
+
+      fetch("https://pdf-server-gk8k.onrender.com/pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: html
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Server error");
+        return res.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+
+        // Mobile-safe: show clickable link
+        document.getElementById("result").innerHTML = `
+          <a href="${url}" target="_blank">
+            👉 Tap here to open / download PDF
+          </a>
+        `;
+      })
+      .catch(err => {
+        document.getElementById("result").innerHTML =
+          "❌ PDF generation failed: " + err;
+      });
+    }
+  </script>
+
+</body>
+</html>
