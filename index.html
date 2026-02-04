@@ -79,6 +79,20 @@ This PDF was generated successfully.
       consoleBox.scrollTop = consoleBox.scrollHeight;
     }
 
+    async function wakeUpServer() {
+    log("Waking up server...", "info");
+    try {
+        // We use 'no-cors' mode just to trigger the wake-up without worrying about response
+        await fetch("https://pdf-server-gk8k.onrender.com/ping", { mode: 'no-cors' });
+        log("Server wake-up signal sent.");
+    } catch (e) {
+        console.log("Wake-up ping sent (error ignored)");
+    }
+}
+
+// Call this immediately when the script loads
+wakeUpServer();
+    
     async function generatePDF() {
       const status = document.getElementById("status");
       status.textContent = "Generating PDF… please wait";
